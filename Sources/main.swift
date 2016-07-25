@@ -173,16 +173,16 @@ enum Direction {
     case left, right
 }
 
-enum Speed {
+enum FallingMode {
     case normal
-    case accelerated
+    case fast
     case drop
 
-    var seconds: Seconds {
+    var speed: Seconds {
         switch self {
-        case .normal: return 0.5
-        case .accelerated: return 0.05
-        case .drop: return 0.0
+            case .normal: return 0.5
+            case .fast: return 0.05
+            case .drop: return 0.0
         }
     }
 }
@@ -191,20 +191,20 @@ class Game {
     var field = Field(width: 10, height: 20)
     var current = Tetrimino(type: .L)
     var next: TetriminoType? = nil
-    var speed: Speed = .normal
-    var tickTime: Seconds = 0
+    var fallingMode: FallingMode = .normal
+    var nextTickTime: Seconds = 0
     var modified = true
 
-    func start(updateTime time: Seconds) {
-        tickTime = time
+    func start(currentTime: Seconds) {
+        nextTickTime = currentTime
         newTetrimino()
         modified = true
     }
 
-    func update(updateTime time: Seconds) {
-        if (time >= tickTime) {
+    func update(currentTime: Seconds) {
+        if (currentTime >= nextTickTime) {
             tick()
-            tickTime = time + speed.seconds
+            nextTickTime = currentTime + fallingMode.speed
         }
     }
 
@@ -228,9 +228,9 @@ class Game {
         modified = true
     }
 
-    func setSpeed(_ speed: Speed, updateTime time: Seconds) {
-        self.speed = speed
-        tickTime = time + speed.seconds
+    func setFallingMode(_ mode: FallingMode, currentTime: Seconds) {
+        fallingMode = mode
+        nextTickTime = currentTime + fallingMode.speed
     }
 
     func shiftTetrimino(_ direction: Direction) {
@@ -248,7 +248,7 @@ class Game {
         }
         current = Tetrimino(type: next!)
         next = TetriminoType.random
-        speed = .normal
+        fallingMode = .normal
     }
 }
 
@@ -411,7 +411,7 @@ var renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED.rawValue)
 assert(renderer != nil, "SDL_GetRenderer failed: \(String(validatingUTF8:SDL_GetError()))")
 
 var game = Game()
-game.start(updateTime: elapsed())
+game.start(currentTime: elapsed())
 
 var canvas = Canvas(renderer: renderer!)
 
@@ -433,7 +433,7 @@ while !quit {
                         game.rotateTetrimino(clockwise: true)
 
                     case SDLK_DOWN:
-                        game.setSpeed(.accelerated, updateTime: elapsed())
+                        game.setFallingMode(.fast, currentTime: elapsed())
 
                     case SDLK_LEFT:
                         game.shiftTetrimino(.left)
@@ -442,7 +442,7 @@ while !quit {
                         game.shiftTetrimino(.right)
 
                     case SDLK_SPACE:
-                        game.setSpeed(.drop, updateTime: elapsed())
+                        game.setFallingMode(.drop, currentTime: elapsed())
 
                     default:
                         break
@@ -453,7 +453,7 @@ while !quit {
                 if event.key.repeat == 0 {
                     switch Int(event.key.keysym.sym) {
                     case SDLK_DOWN:
-                        game.setSpeed(.normal, updateTime: elapsed())
+                        game.setFallingMode(.normal, currentTime: elapsed())
 
                     default:
                         break
@@ -465,7 +465,7 @@ while !quit {
         }
     }
 
-    game.update(updateTime: elapsed())
+    game.update(currentTime: elapsed())
 
     if game.modified {
         canvas.setColor(Color(0, 0, 0, 255))
