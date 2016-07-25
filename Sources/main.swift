@@ -177,9 +177,12 @@ class Game {
     var field = Field(width: 10, height: 20)
     var current = Tetrimino(type: .L)
     var next: TetriminoType? = nil
-    var speed: Seconds = 0.5
+    var accelerate: Bool = false
     var tickTime: Seconds = 0
     var modified = true
+
+    let normalSpeed = 0.5
+    let acceleratedSpeed = 0.05
 
     func start(updateTime time: Seconds) {
         tickTime = time
@@ -190,6 +193,7 @@ class Game {
     func update(updateTime time: Seconds) {
         if (time >= tickTime) {
             tick()
+            let speed = accelerate ? acceleratedSpeed : normalSpeed
             tickTime = time + speed
         }
     }
@@ -224,7 +228,8 @@ class Game {
     }
 
     func accelerateTetrimino(_ accelerate: Bool, updateTime time: Seconds) {
-        speed = accelerate ? 0.02 : 0.5
+        self.accelerate = accelerate
+        let speed = accelerate ? acceleratedSpeed : normalSpeed
         tickTime = time + speed
     }
 
@@ -234,6 +239,7 @@ class Game {
         }
         current = Tetrimino(type: next!)
         next = TetriminoType.random
+        accelerate = false
     }
 }
 
