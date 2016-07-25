@@ -182,6 +182,7 @@ class Game {
     var modified = true
 
     func start(updateTime time: Seconds) {
+        tickTime = time
         nextTetrimino()
         modified = true
     }
