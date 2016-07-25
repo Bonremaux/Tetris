@@ -197,7 +197,7 @@ class Game {
 
     func start(updateTime time: Seconds) {
         tickTime = time
-        nextTetrimino()
+        newTetrimino()
         modified = true
     }
 
@@ -215,7 +215,7 @@ class Game {
             current.pos = prevPos
             field.put(blocks: current.blocks, type: current.type)
             field.deleteFilledRows()
-            nextTetrimino()
+            newTetrimino()
         }
         modified = true
     }
@@ -242,7 +242,7 @@ class Game {
         modified = true
     }
 
-    private func nextTetrimino() {
+    private func newTetrimino() {
         if next == nil {
             next = TetriminoType.random
         }
