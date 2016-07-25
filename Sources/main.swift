@@ -228,9 +228,9 @@ class Game {
         modified = true
     }
 
-    func dropTetrimino(updateTime time: Seconds) {
-        speed = .drop
-        tickTime = time
+    func setSpeed(_ speed: Speed, updateTime time: Seconds) {
+        self.speed = speed
+        tickTime = time + speed.seconds
     }
 
     func shiftTetrimino(_ direction: Direction) {
@@ -240,11 +240,6 @@ class Game {
             current.pos = prevPos
         }
         modified = true
-    }
-
-    func accelerateTetrimino(_ accelerate: Bool, updateTime time: Seconds) {
-        speed = accelerate ? .accelerated : .normal
-        tickTime = time + speed.seconds
     }
 
     private func nextTetrimino() {
@@ -438,7 +433,7 @@ while !quit {
                         game.rotateTetrimino(clockwise: true)
 
                     case SDLK_DOWN:
-                        game.accelerateTetrimino(true, updateTime: elapsed())
+                        game.setSpeed(.accelerated, updateTime: elapsed())
 
                     case SDLK_LEFT:
                         game.shiftTetrimino(.left)
@@ -447,7 +442,7 @@ while !quit {
                         game.shiftTetrimino(.right)
 
                     case SDLK_SPACE:
-                        game.dropTetrimino(updateTime: elapsed())
+                        game.setSpeed(.drop, updateTime: elapsed())
 
                     default:
                         break
@@ -458,7 +453,7 @@ while !quit {
                 if event.key.repeat == 0 {
                     switch Int(event.key.keysym.sym) {
                     case SDLK_DOWN:
-                        game.accelerateTetrimino(false, updateTime: elapsed())
+                        game.setSpeed(.normal, updateTime: elapsed())
 
                     default:
                         break
