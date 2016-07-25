@@ -175,64 +175,64 @@ enum Direction {
 
 class Game {
     var field = Field(width: 10, height: 20)
-    var tetrimino = Tetrimino(type: .L)
-    var nextTetrimino: TetriminoType? = nil
-    var fallingSpeed: Seconds = 0.5
-    var fallTime: Seconds = 0
+    var current = Tetrimino(type: .L)
+    var next: TetriminoType? = nil
+    var speed: Seconds = 0.5
+    var tickTime: Seconds = 0
     var modified = true
 
     func start(updateTime time: Seconds) {
-        nextTetrimino(updateTime: time)
+        nextTetrimino()
         modified = true
     }
 
     func update(updateTime time: Seconds) {
-        if (time >= fallTime) {
-            let prevPos = tetrimino.pos
-            tetrimino.pos.y += 1
-            if field.touching(blocks: tetrimino.blocks) {
-                tetrimino.pos = prevPos
-                field.put(blocks: tetrimino.blocks, type: tetrimino.type)
-                field.deleteFilledRows()
-                nextTetrimino(updateTime: time)
-            }
-            else {
-                fallTime = time + fallingSpeed
-            }
-            modified = true
+        if (time >= tickTime) {
+            tick()
+            tickTime = time + speed
         }
     }
 
+    private func tick() {
+        let prevPos = current.pos
+        current.pos.y += 1
+        if field.touching(blocks: current.blocks) {
+            current.pos = prevPos
+            field.put(blocks: current.blocks, type: current.type)
+            field.deleteFilledRows()
+            nextTetrimino()
+        }
+        modified = true
+    }
+
     func rotateTetrimino(clockwise f: Bool) {
-        tetrimino.rotate(clockwise: f)
-        if field.touching(blocks: tetrimino.blocks) {
-            tetrimino.rotate(clockwise: !f)
+        current.rotate(clockwise: f)
+        if field.touching(blocks: current.blocks) {
+            current.rotate(clockwise: !f)
         }
         modified = true
     }
 
     func shiftTetrimino(_ direction: Direction) {
-        let prevPos = tetrimino.pos
-        tetrimino.pos.x += direction == .left ? -1 : 1
-        if field.touching(blocks: tetrimino.blocks) {
-            tetrimino.pos = prevPos
+        let prevPos = current.pos
+        current.pos.x += direction == .left ? -1 : 1
+        if field.touching(blocks: current.blocks) {
+            current.pos = prevPos
         }
         modified = true
     }
 
     func accelerateTetrimino(_ accelerate: Bool, updateTime time: Seconds) {
-        let speed = accelerate ? 0.02 : 0.5
-        fallingSpeed = speed
-        fallTime = time + speed
+        speed = accelerate ? 0.02 : 0.5
+        tickTime = time + speed
     }
 
-    private func nextTetrimino(updateTime time: Seconds) {
-        if nextTetrimino == nil {
-            nextTetrimino = TetriminoType.random
+    private func nextTetrimino() {
+        if next == nil {
+            next = TetriminoType.random
         }
-        tetrimino = Tetrimino(type: nextTetrimino!)
-        nextTetrimino = TetriminoType.random
-        accelerateTetrimino(false, updateTime: time)
+        current = Tetrimino(type: next!)
+        next = TetriminoType.random
     }
 }
 
@@ -370,11 +370,11 @@ extension Tetrimino {
 
 extension Game {
     func draw(_ canvas: Canvas, _ pos: Point) {
-        if nextTetrimino != nil {
-            nextTetrimino!.draw(canvas, pos + field.bounds.size + Point(50, -300))
+        if next != nil {
+            next!.draw(canvas, pos + field.bounds.size + Point(50, -300))
         }
         field.draw(canvas, pos)
-        tetrimino.draw(canvas, pos)
+        current.draw(canvas, pos)
     }
 }
 
