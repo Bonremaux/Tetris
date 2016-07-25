@@ -173,16 +173,27 @@ enum Direction {
     case left, right
 }
 
+enum Speed {
+    case normal
+    case accelerated
+    case drop
+
+    var seconds: Seconds {
+        switch self {
+        case .normal: return 0.5
+        case .accelerated: return 0.05
+        case .drop: return 0.0
+        }
+    }
+}
+
 class Game {
     var field = Field(width: 10, height: 20)
     var current = Tetrimino(type: .L)
     var next: TetriminoType? = nil
-    var accelerate: Bool = false
+    var speed: Speed = .normal
     var tickTime: Seconds = 0
     var modified = true
-
-    let normalSpeed = 0.5
-    let acceleratedSpeed = 0.05
 
     func start(updateTime time: Seconds) {
         tickTime = time
@@ -193,8 +204,7 @@ class Game {
     func update(updateTime time: Seconds) {
         if (time >= tickTime) {
             tick()
-            let speed = accelerate ? acceleratedSpeed : normalSpeed
-            tickTime = time + speed
+            tickTime = time + speed.seconds
         }
     }
 
@@ -218,6 +228,11 @@ class Game {
         modified = true
     }
 
+    func dropTetrimino(updateTime time: Seconds) {
+        speed = .drop
+        tickTime = time
+    }
+
     func shiftTetrimino(_ direction: Direction) {
         let prevPos = current.pos
         current.pos.x += direction == .left ? -1 : 1
@@ -228,9 +243,8 @@ class Game {
     }
 
     func accelerateTetrimino(_ accelerate: Bool, updateTime time: Seconds) {
-        self.accelerate = accelerate
-        let speed = accelerate ? acceleratedSpeed : normalSpeed
-        tickTime = time + speed
+        speed = accelerate ? .accelerated : .normal
+        tickTime = time + speed.seconds
     }
 
     private func nextTetrimino() {
@@ -239,7 +253,7 @@ class Game {
         }
         current = Tetrimino(type: next!)
         next = TetriminoType.random
-        accelerate = false
+        speed = .normal
     }
 }
 
@@ -424,7 +438,7 @@ while !quit {
                         game.rotateTetrimino(clockwise: true)
 
                     case SDLK_DOWN:
-                        game.rotateTetrimino(clockwise: false)
+                        game.accelerateTetrimino(true, updateTime: elapsed())
 
                     case SDLK_LEFT:
                         game.shiftTetrimino(.left)
@@ -433,7 +447,7 @@ while !quit {
                         game.shiftTetrimino(.right)
 
                     case SDLK_SPACE:
-                        game.accelerateTetrimino(true, updateTime: elapsed())
+                        game.dropTetrimino(updateTime: elapsed())
 
                     default:
                         break
@@ -443,7 +457,7 @@ while !quit {
             case SDL_KEYUP.rawValue:
                 if event.key.repeat == 0 {
                     switch Int(event.key.keysym.sym) {
-                    case SDLK_SPACE:
+                    case SDLK_DOWN:
                         game.accelerateTetrimino(false, updateTime: elapsed())
 
                     default:
