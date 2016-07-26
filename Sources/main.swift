@@ -23,37 +23,55 @@ func + (l: Cell, r: Cell) -> Cell {
     return Cell(l.x + r.x, l.y + r.y)
 }
 
+func += (l: inout Cell, r: Cell) {
+    l = l + r
+}
+
 enum TetriminoType: Equatable {
     case I, J, L, O, S, T, Z
+}
 
-    func mask() -> [[Bool]] {
+extension TetriminoType {
+    func mask() -> [[Int]] {
         switch self {
-            case I: return [[true,  true,  true,  true]]
+            case I: return [[0,0,0,0],
+                            [1,1,1,1],
+                            [0,0,0,0],
+                            [0,0,0,0]]
 
-            case J: return [[true,  true,  true],
-                            [false, false, true]]
+            case J: return [[1,1,1],
+                            [0,0,1],
+                            [0,0,0]]
 
-            case L: return [[true,  true,  true],
-                            [true,  false, false]]
+            case L: return [[1,1,1],
+                            [1,0,0],
+                            [0,0,0]]
 
-            case O: return [[true,  true],
-                            [true,  true]]
+            case O: return [[1,1],
+                            [1,1]]
 
-            case S: return [[false, true,  true],
-                            [true,  true, false]]
+            case S: return [[0,1,1],
+                            [1,1,0],
+                            [0,0,0]]
 
-            case T: return [[true,  true,  true],
-                            [false, true, false]]
+            case T: return [[1,1,1],
+                            [0,1,0],
+                            [0,0,0]]
 
-            case Z: return [[true,  true, false],
-                            [false, true, true]]
+            case Z: return [[1,1,0],
+                            [0,1,1],
+                            [0,0,0]]
         }
     }
 
-    func blocks() -> [Cell] {
-        return mask().enumerated().flatMap { (row, array) in 
-            return array.enumerated().filter{$0.1}.map { (column, _) in 
-                return Cell(row, column)
+    func blocks() -> [[TetriminoType?]] {
+        return mask().map { $0.map { $0 == 0 ? nil : self } }
+    }
+
+    func cells() -> [Cell] {
+        return mask().enumerated().flatMap { (y, row) in 
+            return row.enumerated().filter{$0.1 != 0}.map { (x, _) in 
+                return Cell(x, y)
             }
         }
     }
@@ -115,8 +133,8 @@ class Field {
         }
     }
 
-    func touching(blocks: [Cell]) -> Bool {
-        for cell in blocks {
+    func touching(tetrimino: Tetrimino) -> Bool {
+        for cell in tetrimino.cells() {
             if !contains(cell: cell) || self[cell] != nil {
                 return true
             }
@@ -124,46 +142,50 @@ class Field {
         return false
     }
 
-    func put(blocks: [Cell], type: TetriminoType) {
-        for cell in blocks {
-            self[cell] = type
+    func put(tetrimino: Tetrimino) {
+        for cell in tetrimino.cells() {
+            self[cell] = .L
         }
     }
 }
 
-extension Cell {
-    func rotate90(clockwise f: Bool) -> Cell {
-        let sin = f ? 1 : -1
-        let cos = 0
-        return Cell(x * cos - y * sin, x * sin + y * cos)
-    }
-
-    func rotate90(around c: Cell, clockwise f: Bool) -> Cell {
-        var t = self - c
-        t = t.rotate90(clockwise: f)
-        return t + c
-    }
-}
-
 class Tetrimino {
-    let type: TetriminoType
-    private var cells: [Cell]
-    var origin: Cell
+    var blocks: [[TetriminoType?]]
     var pos: Cell
 
-    init(type t: TetriminoType) {
-        type = t
-        cells = t.blocks()
-        origin = Cell(1, 1)
-        pos = Cell(5, 2)
+    init(type: TetriminoType) {
+        blocks = type.blocks()
+        pos = Cell(4, 0)
+        assert(blocks.count > 0 && blocks.count == blocks[0].count)
     }
 
-    var blocks: [Cell] {
-        return cells.map { pos + $0 }
+    init(copyFrom: Tetrimino) {
+        blocks = copyFrom.blocks
+        pos = copyFrom.pos
     }
 
-    func rotate(clockwise f: Bool) {
-        cells = cells.map { $0.rotate90(around: origin, clockwise: f) }
+    func rotated() -> Tetrimino {
+        let tetrimino = Tetrimino(copyFrom: self)
+        for y in 0..<blocks.count {
+            for x in 0..<blocks.count {
+                tetrimino.blocks[y][x] = blocks[blocks.count - x - 1][y]
+            }
+        }
+        return tetrimino
+    }
+
+    func moved(byOffset offset: Cell) -> Tetrimino {
+        let tetrimino = Tetrimino(copyFrom: self)
+        tetrimino.pos += offset
+        return tetrimino
+    }
+
+    func cells() -> [Cell] {
+        return blocks.enumerated().flatMap { (y, row) in 
+            return row.enumerated().filter{$0.1 != nil}.map { (x, _) in 
+                return pos + Cell(x, y) 
+            }
+        }
     }
 }
 
@@ -171,6 +193,11 @@ typealias Seconds = Double
 
 enum Direction {
     case left, right
+
+    var offset: Cell {
+        let dy = self == .left ? -1 : 1
+        return Cell(dy, 0)
+    }
 }
 
 enum FallingMode {
@@ -209,23 +236,24 @@ class Game {
     }
 
     private func tick() {
-        let prevPos = current.pos
-        current.pos.y += 1
-        if field.touching(blocks: current.blocks) {
-            current.pos = prevPos
-            field.put(blocks: current.blocks, type: current.type)
+        let moved = current.moved(byOffset: Cell(0, 1))
+        if field.touching(tetrimino: moved) {
+            field.put(tetrimino: current)
             field.deleteFilledRows()
             newTetrimino()
+        }
+        else {
+            current = moved
         }
         modified = true
     }
 
     func rotateTetrimino(clockwise f: Bool) {
-        current.rotate(clockwise: f)
-        if field.touching(blocks: current.blocks) {
-            current.rotate(clockwise: !f)
+        let rotated = current.rotated()
+        if !field.touching(tetrimino: current) {
+            current = rotated
+            modified = true
         }
-        modified = true
     }
 
     func setFallingMode(_ mode: FallingMode, currentTime: Seconds) {
@@ -234,10 +262,9 @@ class Game {
     }
 
     func shiftTetrimino(_ direction: Direction) {
-        let prevPos = current.pos
-        current.pos.x += direction == .left ? -1 : 1
-        if field.touching(blocks: current.blocks) {
-            current.pos = prevPos
+        let moved = current.moved(byOffset: direction.offset)
+        if !field.touching(tetrimino: moved) {
+            current = moved
         }
         modified = true
     }
@@ -350,7 +377,7 @@ extension Cell {
 extension TetriminoType {
     func draw(_ canvas: Canvas, _ pos: Point) {
         canvas.setColor(Color(0, 255, 0, 255))
-        for cell in blocks() {
+        for cell in cells() {
             canvas.drawRect(rect: Rect(pos: pos + cell.toCanvas(), size: blockSize))
         }
     }
@@ -378,7 +405,7 @@ extension Field {
 extension Tetrimino {
     func draw(_ canvas: Canvas, _ pos: Point) {
         canvas.setColor(Color(255, 0, 0, 255))
-        for cell in blocks {
+        for cell in cells() {
             canvas.drawRect(rect: Rect(pos: pos + cell.toCanvas(), size: blockSize))
         }
     }
