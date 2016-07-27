@@ -115,10 +115,13 @@ class Field {
         return nil
     }
 
-    func deleteFilledRows() {
+    func deleteFilledRows() -> Int {
+        var count = 0
         while let i = findFilledRow() {
             deleteRow(i)
+            count += 1
         }
+        return count
     }
 
     func touching(tetrimino: Tetrimino) -> Bool {
@@ -232,12 +235,15 @@ class Game {
     var next: TetriminoType? = nil
     var fallingMode: FallingMode = .normal
     var nextTickTime: Seconds = 0
+    var score = 0
     var modified = true
 
     var scoreLabel: TextCache
+    var scoreNumber: NumberCache
 
     init(canvas: Canvas) {
         scoreLabel = canvas.createTextCache(text: "Score: ", color: Color(255, 255, 0, 255))
+        scoreNumber = canvas.createNumberCache(color: Color(255, 255, 0, 255))
     }
 
     func start(currentTime: Seconds) {
@@ -257,7 +263,8 @@ class Game {
         let moved = current.moved(byOffset: Cell(0, 1))
         if field.touching(tetrimino: moved) {
             field.put(tetrimino: current)
-            field.deleteFilledRows()
+            let count = field.deleteFilledRows()
+            score += count * 100
             newTetrimino()
         }
         else {
@@ -307,6 +314,7 @@ class Game {
             next!.draw(canvas, pos + Point(30, 20))
         }
         scoreLabel.draw(canvas, pos + Point(30, 100))
+        scoreNumber.draw(canvas, pos + Point(30, 150), numberString: String(score))
     }
 }
 

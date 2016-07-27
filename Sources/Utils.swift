@@ -38,6 +38,10 @@ func * (l: Point, r: Point) -> Point {
     return Point(l.x * r.x, l.y * r.y)
 }
 
+func += (l: inout Point, r: Point) {
+    l = l + r
+}
+
 struct Rect {
     var x: Float
     var y: Float
