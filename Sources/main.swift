@@ -6,16 +6,20 @@ func elapsed() -> Seconds {
 
 SDL_Init(UInt32(SDL_INIT_VIDEO))
 
+if TTF_Init() == -1 {
+    fatalError("TTF_Init: \(String(validatingUTF8:SDL_GetError())!)");
+}
+
 var window = SDL_CreateWindow("SDL Tutorial", 0, 0, 500, 500, SDL_WINDOW_SHOWN.rawValue)
 assert(window != nil, "SDL_CreateWindow failed: \(String(validatingUTF8:SDL_GetError()))")
 
 var renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED.rawValue)
 assert(renderer != nil, "SDL_GetRenderer failed: \(String(validatingUTF8:SDL_GetError()))")
 
-var game = Game()
-game.start(currentTime: elapsed())
-
 var canvas = Canvas(renderer: renderer!)
+
+var game = Game(canvas: canvas)
+game.start(currentTime: elapsed())
 
 var quit = false
 while !quit {
@@ -80,4 +84,5 @@ while !quit {
     SDL_Delay(1)
 }
 
+TTF_Quit()
 SDL_Quit()

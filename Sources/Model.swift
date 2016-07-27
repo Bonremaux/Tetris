@@ -1,5 +1,13 @@
 import Glibc
 
+let blockSize = Point(20, 20)
+
+extension Cell {
+    func toCanvas() -> Point {
+        return Point(Float(x), Float(y)) * blockSize
+    }
+}
+
 enum TetriminoType: Equatable {
     case I, J, L, O, S, T, Z
 }
@@ -55,6 +63,13 @@ extension TetriminoType {
 
     static var random: TetriminoType {
         return array[Int(rand()) % array.count]
+    }
+
+    func draw(_ canvas: Canvas, _ pos: Point) {
+        canvas.setColor(Color(0, 255, 0, 255))
+        for cell in cells() {
+            canvas.drawRect(rect: Rect(pos: pos + cell.toCanvas(), size: blockSize))
+        }
     }
 }
 
@@ -120,6 +135,23 @@ class Field {
             self[cell] = .L
         }
     }
+
+    var bounds: Rect {
+        return Rect(pos: Point(0, 0), size: size.toCanvas())
+    }
+
+    func draw(_ canvas: Canvas, _ pos: Point) {
+        canvas.setColor(Color(50, 25, 50, 255))
+        canvas.drawRect(rect: bounds.translated(to: pos))
+        for x in 0..<size.x {
+            for y in 0..<size.y {
+                if self[Cell(x, y)] != nil {
+                    canvas.setColor(Color(0, 255, 0, 255))
+                    canvas.drawRect(rect: Rect(pos: pos + Cell(x, y).toCanvas(), size: blockSize))
+                }
+            }
+        }
+    }
 }
 
 class Tetrimino {
@@ -160,6 +192,13 @@ class Tetrimino {
             }
         }
     }
+
+    func draw(_ canvas: Canvas, _ pos: Point) {
+        canvas.setColor(Color(255, 0, 0, 255))
+        for cell in cells() {
+            canvas.drawRect(rect: Rect(pos: pos + cell.toCanvas(), size: blockSize))
+        }
+    }
 }
 
 typealias Seconds = Double
@@ -194,6 +233,12 @@ class Game {
     var fallingMode: FallingMode = .normal
     var nextTickTime: Seconds = 0
     var modified = true
+
+    var scoreLabel: TextCache
+
+    init(canvas: Canvas) {
+        scoreLabel = canvas.createTextCache(text: "Score: ", color: Color(255, 255, 0, 255))
+    }
 
     func start(currentTime: Seconds) {
         nextTickTime = currentTime
@@ -249,6 +294,19 @@ class Game {
         current = Tetrimino(type: next!)
         next = TetriminoType.random
         fallingMode = .normal
+    }
+
+    func draw(_ canvas: Canvas, _ pos: Point) {
+        field.draw(canvas, pos)
+        current.draw(canvas, pos)
+        drawBar(canvas, pos + Point(field.bounds.w, 0))
+    }
+
+    func drawBar(_ canvas: Canvas, _ pos: Point) {
+        if next != nil {
+            next!.draw(canvas, pos + Point(30, 20))
+        }
+        scoreLabel.draw(canvas, pos + Point(30, 100))
     }
 }
 
