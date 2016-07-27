@@ -182,7 +182,7 @@ enum FallingMode {
         switch self {
             case .normal: return 0.5
             case .fast: return 0.05
-            case .drop: return 0.0
+            case .drop: return 0.005
         }
     }
 }
