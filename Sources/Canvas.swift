@@ -1,5 +1,13 @@
 import CSDL2
 
+let blockSize = Point(20, 20)
+
+extension Cell {
+    func toCanvas() -> Point {
+        return Point(Float(x), Float(y)) * blockSize
+    }
+}
+
 class TextCache {
     var texture: OpaquePointer? = nil
     var width: Int32 = 0
