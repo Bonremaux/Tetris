@@ -31,14 +31,17 @@ class Game {
     var fallingMode: FallingMode = .normal
     var nextTickTime: Seconds = 0
     var score = 0
+    var lines = 0
     var modified = true
 
     var scoreLabel: TextCache
     var scoreNumber: NumberCache
+    var linesLabel: TextCache
 
     init(canvas: Canvas) {
         scoreLabel = canvas.createTextCache(text: "Score: ", color: Color(255, 255, 0, 255))
         scoreNumber = canvas.createNumberCache(color: Color(255, 255, 0, 255))
+        linesLabel = canvas.createTextCache(text: "Lines: ", color: Color(255, 255, 0, 255))
     }
 
     func start(currentTime: Seconds) {
@@ -60,6 +63,7 @@ class Game {
             field.put(tetrimino: current)
             let count = field.deleteFilledRows()
             score += count * 100
+            lines += count
             newTetrimino()
         }
         else {
@@ -101,14 +105,18 @@ class Game {
     func draw(_ canvas: Canvas, _ pos: Point) {
         field.draw(canvas, pos)
         current.draw(canvas, pos)
-        drawBar(canvas, pos + Point(field.bounds.w, 0))
+        drawBar(canvas, pos + Point(field.bounds.w + 30, 0))
     }
 
     func drawBar(_ canvas: Canvas, _ pos: Point) {
         if next != nil {
-            next!.draw(canvas, pos + Point(30, 20))
+            next!.draw(canvas, pos + Point(0, 20))
         }
-        scoreLabel.draw(canvas, pos + Point(30, 100))
-        scoreNumber.draw(canvas, pos + Point(30, 150), numberString: String(score))
+
+        scoreLabel.draw(canvas, pos + Point(0, 100))
+        scoreNumber.draw(canvas, pos + Point(120, 100), numberString: String(score))
+
+        linesLabel.draw(canvas, pos + Point(0, 150))
+        scoreNumber.draw(canvas, pos + Point(120, 150), numberString: String(lines))
     }
 }
