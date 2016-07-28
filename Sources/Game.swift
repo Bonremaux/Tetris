@@ -89,7 +89,7 @@ enum State {
 class Game {
     var state: State = .starting
     var field = Field(width: 10, height: 20)
-    var current = Tetrimino(type: .L)
+    var current: Tetrimino? = nil
     var next: TetriminoType? = nil
     var fallingMode: FallingMode = .normal
     var nextTickTime: Seconds = 0
@@ -119,10 +119,11 @@ class Game {
     private func play(currentTime: Seconds) {
         state = .playing
         nextTickTime = currentTime
-        newTetrimino()
     }
 
     private func apply(action: Action, currentTime t: Seconds) {
+        modified = true
+
         switch action {
             case .play: play(currentTime: t)
             case .exit: state = .exiting
@@ -130,7 +131,6 @@ class Game {
             case let .fall(mode): setFallingMode(mode, currentTime: t)
             case let .shift(dir): shiftTetrimino(dir)
         }
-        modified = true
     }
 
     func update(currentTime: Seconds) {
@@ -143,64 +143,77 @@ class Game {
     }
 
     private func tick() {
-        let moved = current.moved(byOffset: Cell(0, 1))
-        if field.touching(tetrimino: moved) {
-            field.put(tetrimino: current)
-            let count = field.deleteFilledRows()
-            if count > 0 {
-                let k = count > 1 ? 2 : 1
-                score += count * 10 * k
-            }
-            lines += count
-            level = lines / 10 + 1
-            if level < 10 {
-                newTetrimino()
-                if field.touching(tetrimino: current) {
-                    state = .gameover
-                }
+        modified = true
+
+        if current == nil {
+            let newTetrimino = Tetrimino(type: next ?? TetriminoType.random)
+            if !field.touching(tetrimino: newTetrimino) {
+                current = newTetrimino
+                next = TetriminoType.random
+                fallingMode = .normal
             }
             else {
-                state = .winning
+                state = .gameover
                 next = nil
             }
         }
         else {
-            current = moved
+            let moved = current!.moved(byOffset: Cell(0, 1))
+            if field.touching(tetrimino: moved) {
+                field.put(tetrimino: current!)
+                current = nil
+                let count = field.deleteFilledRows()
+                if count > 0 {
+                    let k = count > 1 ? 2 : 1
+                    score += count * 10 * k
+                }
+                lines += count
+                level = lines / 10 + 1
+                if level >= 10 {
+                    state = .winning
+                    next = nil
+                }
+            }
+            else {
+                current = moved
+            }
         }
-        modified = true
     }
 
     private func rotateTetrimino() {
-        let rotated = current.rotated()
+        guard let tet = current else {
+            return
+        }
+
+        let rotated = tet.rotated()
         if !field.touching(tetrimino: rotated) {
             current = rotated
         }
     }
 
     private func setFallingMode(_ mode: FallingMode, currentTime: Seconds) {
+        if current == nil {
+            return
+        }
+
         fallingMode = mode
         nextTickTime = currentTime + fallingMode.speed(forLevel: level)
     }
 
     private func shiftTetrimino(_ direction: Direction) {
-        let moved = current.moved(byOffset: direction.offset)
+        guard let tet = current else {
+            return
+        }
+
+        let moved = tet.moved(byOffset: direction.offset)
         if !field.touching(tetrimino: moved) {
             current = moved
         }
     }
 
-    private func newTetrimino() {
-        if next == nil {
-            next = TetriminoType.random
-        }
-        current = Tetrimino(type: next!)
-        next = TetriminoType.random
-        fallingMode = .normal
-    }
-
     func draw(_ canvas: Canvas, _ pos: Point) {
         field.draw(canvas, pos)
-        current.draw(canvas, pos)
+        current?.draw(canvas, pos)
         drawBar(canvas, pos + Point(field.bounds.w + 30, 0))
         if state == .gameover {
             gameoverLabel.draw(canvas, pos + Point(10, 150))

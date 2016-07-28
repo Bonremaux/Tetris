@@ -36,6 +36,7 @@ var game = Game(canvas: canvas)
 while game.state != .exiting {
     var event = SDL_Event()
     while SDL_PollEvent(&event) != 0 {
+
         game.handle(event: event, currentTime: elapsed())
     }
 
