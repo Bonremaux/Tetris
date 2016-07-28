@@ -1,8 +1,11 @@
 import CSDL2
+import Glibc
 
 func elapsed() -> Seconds {
     return Double(SDL_GetTicks()) / 1000
 }
+
+srand(UInt32(time(nil)));
 
 SDL_Init(UInt32(SDL_INIT_VIDEO))
 
