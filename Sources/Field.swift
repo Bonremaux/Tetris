@@ -69,7 +69,7 @@ class Field {
         let rect = bounds.moved(to: pos)
 
         canvas.setColor(Color(80, 50, 80))
-        canvas.drawRect(rect: rect.expanded(thickness: 10))
+        canvas.drawRect(rect: rect.expanded(thickness: 5))
 
         canvas.setColor(Color(40, 25, 40))
         canvas.drawRect(rect: rect)

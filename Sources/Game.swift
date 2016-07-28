@@ -113,17 +113,27 @@ class Game {
     }
 
     func drawBar(_ canvas: Canvas, _ pos: Point) {
+        let rect = Rect(pos: pos, size: Point(180, 100))
+        canvas.setColor(Color(80, 50, 80))
+        canvas.drawRect(rect: rect.expanded(thickness: 5))
+        canvas.setColor(Color(20, 15, 20))
+        canvas.drawRect(rect: rect)
         if next != nil {
-            next!.draw(canvas, pos + Point(0, 20))
+            next!.draw(canvas, pos + Point(60, 30))
         }
 
-        scoreLabel.draw(canvas, pos + Point(0, 100))
-        scoreNumber.draw(canvas, pos + Point(120, 100), numberString: String(score))
+        let numberOffset = Point(120, 0)
+        var p = pos + Point(0, 130)
 
-        linesLabel.draw(canvas, pos + Point(0, 150))
-        scoreNumber.draw(canvas, pos + Point(120, 150), numberString: String(lines))
+        scoreLabel.draw(canvas, p)
+        scoreNumber.draw(canvas, p + numberOffset, numberString: String(score))
 
-        levelLabel.draw(canvas, pos + Point(0, 200))
-        scoreNumber.draw(canvas, pos + Point(120, 200), numberString: String(level))
+        p += Point(0, 60)
+        linesLabel.draw(canvas, p)
+        scoreNumber.draw(canvas, p + numberOffset, numberString: String(lines))
+
+        p += Point(0, 60)
+        levelLabel.draw(canvas, p)
+        scoreNumber.draw(canvas, p + numberOffset, numberString: String(level))
     }
 }
