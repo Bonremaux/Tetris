@@ -66,8 +66,14 @@ class Field {
     }
 
     func draw(_ canvas: Canvas, _ pos: Point) {
+        let rect = bounds.moved(to: pos)
+
+        canvas.setColor(Color(80, 50, 80))
+        canvas.drawRect(rect: rect.expanded(thickness: 10))
+
         canvas.setColor(Color(40, 25, 40))
-        canvas.drawRect(rect: bounds.translated(to: pos))
+        canvas.drawRect(rect: rect)
+
         for x in 0..<size.x {
             for y in 0..<size.y {
                 if let type = self[Cell(x, y)] {

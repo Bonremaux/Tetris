@@ -42,6 +42,14 @@ func += (l: inout Point, r: Point) {
     l = l + r
 }
 
+func + (l: Point, s: Float) -> Point {
+    return Point(l.x + s, l.y + s)
+}
+
+func - (l: Point, s: Float) -> Point {
+    return Point(l.x - s, l.y - s)
+}
+
 struct Rect {
     var x: Float
     var y: Float
@@ -75,8 +83,12 @@ struct Rect {
         }
     }
 
-    func translated(to point: Point) -> Rect {
-        return Rect(pos: point + position, size: size)
+    func moved(to pos: Point) -> Rect {
+        return Rect(pos: pos, size: size)
+    }
+
+    func expanded(thickness t: Float) -> Rect {
+        return Rect(pos: position - t, size: size + t * 2)
     }
 }
 
