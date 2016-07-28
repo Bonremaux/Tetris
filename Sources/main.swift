@@ -5,19 +5,29 @@ func elapsed() -> Seconds {
     return Double(SDL_GetTicks()) / 1000
 }
 
+func sdlFatal(_ str: String) {
+    fatalError(str + ": \(String(validatingUTF8:SDL_GetError()) ?? "unknown error")");
+}
+
 srand(UInt32(time(nil)));
 
-SDL_Init(UInt32(SDL_INIT_VIDEO))
+if SDL_Init(UInt32(SDL_INIT_VIDEO)) == -1 {
+    sdlFatal("SDL_Init")
+}
 
 if TTF_Init() == -1 {
-    fatalError("TTF_Init: \(String(validatingUTF8:SDL_GetError())!)");
+    sdlFatal("TTF_Init")
 }
 
 var window = SDL_CreateWindow("SDL Tutorial", 0, 0, 500, 500, SDL_WINDOW_SHOWN.rawValue)
-assert(window != nil, "SDL_CreateWindow failed: \(String(validatingUTF8:SDL_GetError()))")
+if window == nil {
+    sdlFatal("SDL_CreateWindow failed")
+}
 
 var renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED.rawValue)
-assert(renderer != nil, "SDL_GetRenderer failed: \(String(validatingUTF8:SDL_GetError()))")
+if renderer == nil {
+    sdlFatal("SDL_CreateRenderer failed")
+}
 
 var canvas = Canvas(renderer: renderer!)
 
