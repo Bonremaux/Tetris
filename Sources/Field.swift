@@ -57,7 +57,7 @@ class Field {
 
     func put(tetrimino: Tetrimino) {
         for cell in tetrimino.cells() {
-            self[cell] = .L
+            self[cell] = tetrimino.type
         }
     }
 
@@ -66,12 +66,12 @@ class Field {
     }
 
     func draw(_ canvas: Canvas, _ pos: Point) {
-        canvas.setColor(Color(50, 25, 50, 255))
+        canvas.setColor(Color(40, 25, 40))
         canvas.drawRect(rect: bounds.translated(to: pos))
         for x in 0..<size.x {
             for y in 0..<size.y {
-                if self[Cell(x, y)] != nil {
-                    canvas.setColor(Color(0, 255, 0, 255))
+                if let type = self[Cell(x, y)] {
+                    canvas.setColor(type.color)
                     canvas.drawRect(rect: Rect(pos: pos + Cell(x, y).toCanvas(), size: blockSize))
                 }
             }

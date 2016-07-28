@@ -41,10 +41,10 @@ class Game {
     var levelLabel: TextCache
 
     init(canvas: Canvas) {
-        scoreLabel = canvas.createTextCache(text: "Score: ", color: Color(255, 255, 0, 255))
-        scoreNumber = canvas.createNumberCache(color: Color(255, 255, 0, 255))
-        linesLabel = canvas.createTextCache(text: "Lines: ", color: Color(255, 255, 0, 255))
-        levelLabel = canvas.createTextCache(text: "Level: ", color: Color(255, 255, 0, 255))
+        scoreLabel = canvas.createTextCache(text: "Score: ", color: Color.yellow)
+        scoreNumber = canvas.createNumberCache(color: Color.yellow)
+        linesLabel = canvas.createTextCache(text: "Lines: ", color: Color.yellow)
+        levelLabel = canvas.createTextCache(text: "Level: ", color: Color.yellow)
     }
 
     func start(currentTime: Seconds) {

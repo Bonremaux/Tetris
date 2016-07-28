@@ -37,8 +37,8 @@ extension TetriminoType {
         }
     }
 
-    func blocks() -> [[TetriminoType?]] {
-        return mask().map { $0.map { $0 == 0 ? nil : self } }
+    func blocks() -> [[Bool]] {
+        return mask().map { $0.map { $0 != 0 } }
     }
 
     func cells() -> [Cell] {
@@ -46,6 +46,18 @@ extension TetriminoType {
             return row.enumerated().filter{$0.1 != 0}.map { (x, _) in 
                 return Cell(x, y)
             }
+        }
+    }
+
+    var color: Color {
+        switch self {
+            case I: return Color.maroon
+            case J: return Color.lightgrey
+            case L: return Color.purple
+            case O: return Color.slateblue
+            case S: return Color.darkgreen
+            case T: return Color.brown
+            case Z: return Color.teal
         }
     }
 
@@ -58,7 +70,7 @@ extension TetriminoType {
     }
 
     func draw(_ canvas: Canvas, _ pos: Point) {
-        canvas.setColor(Color(0, 255, 0, 255))
+        canvas.setColor(self.color)
         for cell in cells() {
             canvas.drawRect(rect: Rect(pos: pos + cell.toCanvas(), size: blockSize))
         }
@@ -70,16 +82,19 @@ func == (l: TetriminoType, r: TetriminoType) -> Bool {
 }
 
 class Tetrimino {
-    var blocks: [[TetriminoType?]]
+    let type: TetriminoType
+    var blocks: [[Bool]]
     var pos: Cell
 
     init(type: TetriminoType) {
+        self.type = type
         blocks = type.blocks()
         pos = Cell(4, 0)
         assert(blocks.count > 0 && blocks.count == blocks[0].count)
     }
 
     init(copyFrom: Tetrimino) {
+        type = copyFrom.type
         blocks = copyFrom.blocks
         pos = copyFrom.pos
     }
@@ -102,15 +117,15 @@ class Tetrimino {
 
     func cells() -> [Cell] {
         return blocks.enumerated().flatMap { (y, row) in 
-            return row.enumerated().filter{$0.1 != nil}.map { (x, _) in 
+            return row.enumerated().filter{$0.1}.map { (x, _) in 
                 return pos + Cell(x, y) 
             }
         }
     }
 
     func draw(_ canvas: Canvas, _ pos: Point) {
-        canvas.setColor(Color(255, 0, 0, 255))
         for cell in cells() {
+            canvas.setColor(type.color)
             canvas.drawRect(rect: Rect(pos: pos + cell.toCanvas(), size: blockSize))
         }
     }

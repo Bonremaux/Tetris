@@ -8,13 +8,19 @@ extension Cell {
     }
 }
 
+extension SDL_Color {
+    init(_ c: Color) {
+        self = SDL_Color(r: c.r, g: c.g, b: c.b, a: c.a)
+    }
+}
+
 class TextCache {
     var texture: OpaquePointer? = nil
     var width: Int32 = 0
     var height: Int32 = 0
 
     private init(canvas: Canvas, text: String, color c: Color) {
-        let surface = TTF_RenderText_Blended(canvas.font, text, SDL_Color(r: c.0, g: c.1, b: c.2, a: c.3))
+        let surface = TTF_RenderText_Blended(canvas.font, text, SDL_Color(c))
         if surface != nil {
             texture = SDL_CreateTextureFromSurface(canvas.renderer, surface)
             width = surface!.pointee.w
@@ -58,7 +64,7 @@ class NumberCache {
 
     private init(canvas: Canvas, color c: Color) {
         for char in "0123456789".characters {
-            let surface = TTF_RenderText_Blended(canvas.font, String(char), SDL_Color(r: c.0, g: c.1, b: c.2, a: c.3))
+            let surface = TTF_RenderText_Blended(canvas.font, String(char), SDL_Color(c))
             if surface != nil {
                 let texture = SDL_CreateTextureFromSurface(canvas.renderer, surface)
                 let width = surface!.pointee.w
@@ -106,7 +112,7 @@ class Canvas {
     }
 
     func setColor(_ c: Color) {
-        SDL_SetRenderDrawColor(renderer, c.0, c.1, c.2, c.3)
+        SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a)
     }
 
     func clear() {

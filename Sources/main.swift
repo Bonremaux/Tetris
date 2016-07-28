@@ -74,7 +74,7 @@ while !quit {
     game.update(currentTime: elapsed())
 
     if game.modified {
-        canvas.setColor(Color(0, 0, 0, 255))
+        canvas.setColor(Color.black)
         canvas.clear()
         game.draw(canvas, Point(50, 50))
         canvas.present()
