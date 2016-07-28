@@ -32,7 +32,6 @@ if renderer == nil {
 var canvas = Canvas(renderer: renderer!)
 
 var game = Game(canvas: canvas)
-game.start(currentTime: elapsed())
 
 while game.state != .exiting {
     var event = SDL_Event()

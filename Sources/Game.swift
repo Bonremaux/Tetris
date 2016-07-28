@@ -116,15 +116,15 @@ class Game {
         winLabel = canvas.createTextCache(text: "YOU WIN!", color: Color.orange)
     }
 
-    func start(currentTime: Seconds) {
+    private func play(currentTime: Seconds) {
+        state = .playing
         nextTickTime = currentTime
         newTetrimino()
-        modified = true
     }
 
-    func apply(action: Action, currentTime t: Seconds) {
+    private func apply(action: Action, currentTime t: Seconds) {
         switch action {
-            case .play: state = .playing
+            case .play: play(currentTime: t)
             case .exit: state = .exiting
             case .rotate: rotateTetrimino()
             case let .fall(mode): setFallingMode(mode, currentTime: t)
@@ -147,7 +147,10 @@ class Game {
         if field.touching(tetrimino: moved) {
             field.put(tetrimino: current)
             let count = field.deleteFilledRows()
-            score += count * 100
+            if count > 0 {
+                let k = count > 1 ? 2 : 1
+                score += count * 10 * k
+            }
             lines += count
             level = lines / 10 + 1
             if level < 10 {
@@ -167,25 +170,23 @@ class Game {
         modified = true
     }
 
-    func rotateTetrimino() {
+    private func rotateTetrimino() {
         let rotated = current.rotated()
         if !field.touching(tetrimino: rotated) {
             current = rotated
-            modified = true
         }
     }
 
-    func setFallingMode(_ mode: FallingMode, currentTime: Seconds) {
+    private func setFallingMode(_ mode: FallingMode, currentTime: Seconds) {
         fallingMode = mode
         nextTickTime = currentTime + fallingMode.speed(forLevel: level)
     }
 
-    func shiftTetrimino(_ direction: Direction) {
+    private func shiftTetrimino(_ direction: Direction) {
         let moved = current.moved(byOffset: direction.offset)
         if !field.touching(tetrimino: moved) {
             current = moved
         }
-        modified = true
     }
 
     private func newTetrimino() {
@@ -212,7 +213,7 @@ class Game {
         }
     }
 
-    func drawBar(_ canvas: Canvas, _ pos: Point) {
+    private func drawBar(_ canvas: Canvas, _ pos: Point) {
         let rect = Rect(pos: pos, size: Point(180, 100))
         canvas.setColor(Color(80, 50, 80))
         canvas.drawRect(rect: rect.expanded(thickness: 5))
