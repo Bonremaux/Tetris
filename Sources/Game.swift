@@ -15,9 +15,9 @@ enum FallingMode {
     case fast
     case drop
 
-    var speed: Seconds {
+    func speed(forLevel level: Int) -> Seconds {
         switch self {
-            case .normal: return 0.5
+            case .normal: return 0.8 - Double(level) * 0.07
             case .fast: return 0.05
             case .drop: return 0.005
         }
@@ -32,16 +32,19 @@ class Game {
     var nextTickTime: Seconds = 0
     var score = 0
     var lines = 0
+    var level = 1
     var modified = true
 
     var scoreLabel: TextCache
     var scoreNumber: NumberCache
     var linesLabel: TextCache
+    var levelLabel: TextCache
 
     init(canvas: Canvas) {
         scoreLabel = canvas.createTextCache(text: "Score: ", color: Color(255, 255, 0, 255))
         scoreNumber = canvas.createNumberCache(color: Color(255, 255, 0, 255))
         linesLabel = canvas.createTextCache(text: "Lines: ", color: Color(255, 255, 0, 255))
+        levelLabel = canvas.createTextCache(text: "Level: ", color: Color(255, 255, 0, 255))
     }
 
     func start(currentTime: Seconds) {
@@ -53,7 +56,7 @@ class Game {
     func update(currentTime: Seconds) {
         if (currentTime >= nextTickTime) {
             tick()
-            nextTickTime = currentTime + fallingMode.speed
+            nextTickTime = currentTime + fallingMode.speed(forLevel: level)
         }
     }
 
@@ -64,6 +67,7 @@ class Game {
             let count = field.deleteFilledRows()
             score += count * 100
             lines += count
+            level = lines / 10 + 1
             newTetrimino()
         }
         else {
@@ -82,7 +86,7 @@ class Game {
 
     func setFallingMode(_ mode: FallingMode, currentTime: Seconds) {
         fallingMode = mode
-        nextTickTime = currentTime + fallingMode.speed
+        nextTickTime = currentTime + fallingMode.speed(forLevel: level)
     }
 
     func shiftTetrimino(_ direction: Direction) {
@@ -118,5 +122,8 @@ class Game {
 
         linesLabel.draw(canvas, pos + Point(0, 150))
         scoreNumber.draw(canvas, pos + Point(120, 150), numberString: String(lines))
+
+        levelLabel.draw(canvas, pos + Point(0, 200))
+        scoreNumber.draw(canvas, pos + Point(120, 200), numberString: String(level))
     }
 }
