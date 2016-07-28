@@ -169,7 +169,7 @@ class Game {
 
     func rotateTetrimino() {
         let rotated = current.rotated()
-        if !field.touching(tetrimino: current) {
+        if !field.touching(tetrimino: rotated) {
             current = rotated
             modified = true
         }
