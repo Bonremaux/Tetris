@@ -36,6 +36,7 @@ enum Action {
 enum State {
     case starting
     case playing
+    case winning
     case gameover
     case exiting
 
@@ -103,6 +104,7 @@ class Game {
     var levelLabel: TextCache
     var gameoverLabel: TextCache
     var playLabel: TextCache
+    var winLabel: TextCache
 
     init(canvas: Canvas) {
         scoreLabel = canvas.createTextCache(text: "Score: ", color: Color.yellow)
@@ -111,6 +113,7 @@ class Game {
         levelLabel = canvas.createTextCache(text: "Level: ", color: Color.yellow)
         gameoverLabel = canvas.createTextCache(text: "GAME OVER", color: Color.red)
         playLabel = canvas.createTextCache(text: "PLAY", color: Color.orange)
+        winLabel = canvas.createTextCache(text: "YOU WIN!", color: Color.orange)
     }
 
     func start(currentTime: Seconds) {
@@ -147,9 +150,15 @@ class Game {
             score += count * 100
             lines += count
             level = lines / 10 + 1
-            newTetrimino()
-            if field.touching(tetrimino: current) {
-                state = .gameover
+            if level < 10 {
+                newTetrimino()
+                if field.touching(tetrimino: current) {
+                    state = .gameover
+                }
+            }
+            else {
+                state = .winning
+                next = nil
             }
         }
         else {
@@ -197,6 +206,9 @@ class Game {
         }
         else if state == .starting {
             playLabel.draw(canvas, pos + Point(55, 150))
+        }
+        else if state == .winning {
+            winLabel.draw(canvas, pos + Point(35, 150))
         }
     }
 
