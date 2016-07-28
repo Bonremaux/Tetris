@@ -1,3 +1,4 @@
+import CSDL2
 
 typealias Seconds = Double
 
@@ -24,7 +25,68 @@ enum FallingMode {
     }
 }
 
+enum Action {
+    case play
+    case rotate
+    case shift(Direction)
+    case fall(FallingMode)
+    case exit
+}
+
+enum State {
+    case starting
+    case playing
+    case gameover
+    case exiting
+
+    func translate(event: SDL_Event) -> Action? {
+        if event.type == SDL_QUIT.rawValue {
+            return .exit
+        }
+
+        if event.type == SDL_KEYDOWN.rawValue || event.type == SDL_KEYUP.rawValue {
+            if event.key.repeat != 0 {
+                return nil
+            }
+            let key = Int(event.key.keysym.sym)
+            let pressed = event.type == SDL_KEYDOWN.rawValue
+
+            if pressed && [SDLK_q, SDLK_ESCAPE].contains({ $0 == key }) {
+                return .exit
+            }
+
+            if self == .starting {
+                if pressed && key == SDLK_RETURN {
+                    return .play
+                }
+            }
+
+            if self == .playing {
+                if pressed {
+                    switch key {
+                        case SDLK_UP: return .rotate
+                        case SDLK_DOWN: return .fall(.fast)
+                        case SDLK_LEFT: return .shift(.left)
+                        case SDLK_RIGHT: return .shift(.right)
+                        case SDLK_SPACE: return .fall(.drop)
+                        default: break
+                    }
+                }
+                else {
+                    switch key {
+                        case SDLK_DOWN: return .fall(.normal)
+                        default: break
+                    }
+                }
+            }
+        }
+
+        return nil
+    }
+}
+
 class Game {
+    var state: State = .starting
     var field = Field(width: 10, height: 20)
     var current = Tetrimino(type: .L)
     var next: TetriminoType? = nil
@@ -39,12 +101,16 @@ class Game {
     var scoreNumber: NumberCache
     var linesLabel: TextCache
     var levelLabel: TextCache
+    var gameoverLabel: TextCache
+    var playLabel: TextCache
 
     init(canvas: Canvas) {
         scoreLabel = canvas.createTextCache(text: "Score: ", color: Color.yellow)
         scoreNumber = canvas.createNumberCache(color: Color.yellow)
         linesLabel = canvas.createTextCache(text: "Lines: ", color: Color.yellow)
         levelLabel = canvas.createTextCache(text: "Level: ", color: Color.yellow)
+        gameoverLabel = canvas.createTextCache(text: "GAME OVER", color: Color.red)
+        playLabel = canvas.createTextCache(text: "PLAY", color: Color.orange)
     }
 
     func start(currentTime: Seconds) {
@@ -53,10 +119,23 @@ class Game {
         modified = true
     }
 
+    func apply(action: Action, currentTime t: Seconds) {
+        switch action {
+            case .play: state = .playing
+            case .exit: state = .exiting
+            case .rotate: rotateTetrimino()
+            case let .fall(mode): setFallingMode(mode, currentTime: t)
+            case let .shift(dir): shiftTetrimino(dir)
+        }
+        modified = true
+    }
+
     func update(currentTime: Seconds) {
-        if (currentTime >= nextTickTime) {
-            tick()
-            nextTickTime = currentTime + fallingMode.speed(forLevel: level)
+        if state == .playing {
+            if (currentTime >= nextTickTime) {
+                tick()
+                nextTickTime = currentTime + fallingMode.speed(forLevel: level)
+            }
         }
     }
 
@@ -69,6 +148,9 @@ class Game {
             lines += count
             level = lines / 10 + 1
             newTetrimino()
+            if field.touching(tetrimino: current) {
+                state = .gameover
+            }
         }
         else {
             current = moved
@@ -76,7 +158,7 @@ class Game {
         modified = true
     }
 
-    func rotateTetrimino(clockwise f: Bool) {
+    func rotateTetrimino() {
         let rotated = current.rotated()
         if !field.touching(tetrimino: current) {
             current = rotated
@@ -110,6 +192,12 @@ class Game {
         field.draw(canvas, pos)
         current.draw(canvas, pos)
         drawBar(canvas, pos + Point(field.bounds.w + 30, 0))
+        if state == .gameover {
+            gameoverLabel.draw(canvas, pos + Point(10, 150))
+        }
+        else if state == .starting {
+            playLabel.draw(canvas, pos + Point(55, 150))
+        }
     }
 
     func drawBar(_ canvas: Canvas, _ pos: Point) {
@@ -135,5 +223,11 @@ class Game {
         p += Point(0, 60)
         levelLabel.draw(canvas, p)
         scoreNumber.draw(canvas, p + numberOffset, numberString: String(level))
+    }
+
+    func handle(event: SDL_Event, currentTime t: Seconds) {
+        if let action = state.translate(event: event) {
+            apply(action: action, currentTime: t)
+        }
     }
 }

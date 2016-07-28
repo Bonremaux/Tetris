@@ -24,54 +24,10 @@ var canvas = Canvas(renderer: renderer!)
 var game = Game(canvas: canvas)
 game.start(currentTime: elapsed())
 
-var quit = false
-while !quit {
+while game.state != .exiting {
     var event = SDL_Event()
     while SDL_PollEvent(&event) != 0 {
-        switch event.type {
-            case SDL_QUIT.rawValue:
-                quit = true
-
-            case SDL_KEYDOWN.rawValue:
-                if event.key.repeat == 0 {
-                    switch Int(event.key.keysym.sym) {
-                    case SDLK_q:
-                        quit = true
-
-                    case SDLK_UP:
-                        game.rotateTetrimino(clockwise: true)
-
-                    case SDLK_DOWN:
-                        game.setFallingMode(.fast, currentTime: elapsed())
-
-                    case SDLK_LEFT:
-                        game.shiftTetrimino(.left)
-
-                    case SDLK_RIGHT:
-                        game.shiftTetrimino(.right)
-
-                    case SDLK_SPACE:
-                        game.setFallingMode(.drop, currentTime: elapsed())
-
-                    default:
-                        break
-                    }
-                }
-
-            case SDL_KEYUP.rawValue:
-                if event.key.repeat == 0 {
-                    switch Int(event.key.keysym.sym) {
-                    case SDLK_DOWN:
-                        game.setFallingMode(.normal, currentTime: elapsed())
-
-                    default:
-                        break
-                    }
-                }
-
-            default:
-                break
-        }
+        game.handle(event: event, currentTime: elapsed())
     }
 
     game.update(currentTime: elapsed())
