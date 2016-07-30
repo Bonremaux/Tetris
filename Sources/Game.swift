@@ -27,6 +27,8 @@ enum FallingMode {
 
 enum Action {
     case play
+    case pause
+    case resume
     case rotate
     case shift(Direction)
     case fall(FallingMode)
@@ -36,6 +38,7 @@ enum Action {
 enum State {
     case starting
     case playing
+    case paused
     case winning
     case gameover
     case exiting
@@ -65,6 +68,8 @@ extension State {
             (State.playing,  SDLK_LEFT,   .pressed,  Action.shift(.left)  ),
             (State.playing,  SDLK_RIGHT,  .pressed,  Action.shift(.right) ),
             (State.playing,  SDLK_SPACE,  .pressed,  Action.fall(.drop)   ),
+            (State.playing,  SDLK_RETURN, .pressed,  Action.pause         ),
+            (State.paused,   nil,         .pressed,  Action.resume        ),
         ]
     }()
 
@@ -115,6 +120,7 @@ class Game {
     var gameoverLabel: TextCache
     var playLabel: TextCache
     var winLabel: TextCache
+    var pauseLabel: TextCache
 
     init(canvas: Canvas) {
         scoreLabel = canvas.createTextCache(text: "Score: ", color: Color.yellow)
@@ -124,6 +130,7 @@ class Game {
         gameoverLabel = canvas.createTextCache(text: "GAME OVER", color: Color.red)
         playLabel = canvas.createTextCache(text: "PLAY", color: Color.orange)
         winLabel = canvas.createTextCache(text: "YOU WIN!", color: Color.orange)
+        pauseLabel = canvas.createTextCache(text: "PAUSED", color: Color.orange)
     }
 
     private func play(currentTime: Seconds) {
@@ -136,6 +143,8 @@ class Game {
 
         switch action {
             case .play: play(currentTime: t)
+            case .pause: state = .paused
+            case .resume: play(currentTime: t)
             case .exit: state = .exiting
             case .rotate: rotateTetrimino()
             case let .fall(mode): setFallingMode(mode, currentTime: t)
@@ -233,6 +242,9 @@ class Game {
         }
         else if state == .winning {
             winLabel.draw(canvas, pos + Point(35, 150))
+        }
+        else if state == .paused {
+            pauseLabel.draw(canvas, pos + Point(35, 150))
         }
     }
 
