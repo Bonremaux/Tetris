@@ -39,47 +39,57 @@ enum State {
     case winning
     case gameover
     case exiting
+}
+
+typealias KeyCode = Int
+
+enum KeyState {
+    case pressed
+    case released
+}
+
+struct KeyEvent {
+    let keyCode: KeyCode
+    let keyState: KeyState
+}
+
+extension State {
+    static var keyBindings: [(State?, KeyCode?, KeyState, action: Action)] = {
+        return [
+            (nil,            SDLK_ESCAPE, .pressed,  Action.exit          ),
+            (nil,            SDLK_q,      .pressed,  Action.exit          ),
+            (State.starting, nil,         .pressed,  Action.play          ),
+            (State.playing,  SDLK_DOWN,   .pressed,  Action.fall(.fast)   ),
+            (State.playing,  SDLK_DOWN,   .released, Action.fall(.normal) ),
+            (State.playing,  SDLK_UP,     .pressed,  Action.rotate        ),
+            (State.playing,  SDLK_LEFT,   .pressed,  Action.shift(.left)  ),
+            (State.playing,  SDLK_RIGHT,  .pressed,  Action.shift(.right) ),
+            (State.playing,  SDLK_SPACE,  .pressed,  Action.fall(.drop)   ),
+        ]
+    }()
+
+    func translate(keyEvent event: KeyEvent) -> Action? {
+        let elem = State.keyBindings.first { (state, keyCode, keyState, _) in 
+            return (state == self || state == nil) && (keyCode == event.keyCode || keyCode == nil)
+            && keyState == event.keyState 
+        }
+        return elem?.action
+    }
 
     func translate(event: SDL_Event) -> Action? {
-        if event.type == SDL_QUIT.rawValue {
+        let eventType = SDL_EventType(event.type)
+
+        if eventType == SDL_QUIT {
             return .exit
         }
 
-        if event.type == SDL_KEYDOWN.rawValue || event.type == SDL_KEYUP.rawValue {
+        if [SDL_KEYDOWN, SDL_KEYUP].contains(eventType) {
             if event.key.repeat != 0 {
                 return nil
             }
-            let key = Int(event.key.keysym.sym)
-            let pressed = event.type == SDL_KEYDOWN.rawValue
-
-            if pressed && [SDLK_q, SDLK_ESCAPE].contains({ $0 == key }) {
-                return .exit
-            }
-
-            if self == .starting {
-                if pressed && key == SDLK_RETURN {
-                    return .play
-                }
-            }
-
-            if self == .playing {
-                if pressed {
-                    switch key {
-                        case SDLK_UP: return .rotate
-                        case SDLK_DOWN: return .fall(.fast)
-                        case SDLK_LEFT: return .shift(.left)
-                        case SDLK_RIGHT: return .shift(.right)
-                        case SDLK_SPACE: return .fall(.drop)
-                        default: break
-                    }
-                }
-                else {
-                    switch key {
-                        case SDLK_DOWN: return .fall(.normal)
-                        default: break
-                    }
-                }
-            }
+            let code = KeyCode(event.key.keysym.sym)
+            let state = eventType == SDL_KEYDOWN ? KeyState.pressed : KeyState.released
+            return translate(keyEvent: KeyEvent(keyCode: code, keyState: state))
         }
 
         return nil
